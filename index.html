@@ -1156,8 +1156,10 @@ function ipo(x,y){
 const SCENES = [firstDay,bigCo,idea,outage,hire,market,ai,sale,ipo];
 const DIE = {x:290,y:1050,s:70};   // the die's centre on the sheet, and its size
 /* a square's label: at most five words, on two lines split where they balance best */
-const lines = t => { const w = t.split(' '); if (w.length > 5) console.warn('more than 5 words:',t); if (w.length < 3) return [t]; const cut = (k,ws) => { let best = null; for (let i = 1; i < ws.length; i++){ const rest = k > 2 ? cut(k-1,ws.slice(i)) : [ws.slice(i).join(' ')]; if (!rest) continue; const h = [ws.slice(0,i).join(' '),...rest], m = Math.max(...h.map(x => x.length)); if (!best || m < best.m) best = Object.assign(h,{m}); } return best; };
-  const two = cut(2,w); return two.m <= 16 || w.length < 3 ? [...two] : [...cut(3,w)]; };   // two lines, or three when two would run past the room
+/* a square's label: at most five words, on two lines split where they balance best */
+const lines = t => { const w = t.split(' '); if (w.length > 5) console.warn('more than 5 words:',t); if (w.length < 3) return [t]; let best = null; for (let k = 1; k < w.length; k++){ const a = w.slice(0,k).join(' '), b = w.slice(k).join(' '), m = Math.max(a.length,b.length); if (!best || m < best.m) best = Object.assign([a,b],{m}); } return [...best]; };
+/* the label's size: 17, or a little smaller when its longer line would run past the room (about 15 characters fit at 17) */
+const labelSize = L => { const m = Math.max(...L.map(l => l.length)); return m > 15 ? Math.round(17*15/m*10)/10 : 17; };
 const ORDER9 = [[0,0],[1,0],[2,0],[2,1],[1,1],[0,1],[0,2],[1,2],[2,2]];
 /* floors and walls: early days are warm boards, the middle years carpet and parquet, the end is tile and a dance floor */
 const FLOOR = ['b','b','p','t','p','b','t','s','c'], FLOORC = ['#e3d6bc','#e4dac3','#ddcfb4','#d5dacc','#c6b8a1','#e0d5c0','#dad6cf','#d7d2c9','#d6c8cf'], WALLS = ['#adb6bc','#d5c299','#c09c8f','#d5c299','#d1c9ba','#b9c3ab','#c09c8f','#b9c3ab','#adb6bc'];
@@ -1211,7 +1213,7 @@ function draw(seed){
   partitions(E,order);
   for (let n = 0; n < 8; n++){ const [a,b] = order[n], [c,d] = order[n+1], p = [(a+.5)*CELL,(b+.5)*CELL], q = [(c+.5)*CELL,(d+.5)*CELL], u = [Math.sign(c-a),Math.sign(d-b)]; arrow([[p[0]+u[0]*(CELL*.4),p[1]+u[1]*(CELL*.4)],[q[0]-u[0]*(CELL*.46),q[1]-u[1]*(CELL*.46)]]); }
   order.map((o,n) => [o,n]).sort((a,b) => (a[0][0]+a[0][1])-(b[0][0]+b[0][1])).forEach(([[i,j],n]) => { const x = i*CELL, y = j*CELL; out.push(`<g data-cell="${n}" data-state="${SQ[n].id}">`);
-    { const L = lines(SQ[n].words), v = j === 2 ? 30 : 38; floorText(x+12,y+CELL-v,0,String(n+1),{size:36,col:RED,cls:'it'}); L.forEach((l,k) => floorText(x+37,y+CELL-v-(L.length-1-k)*18,0,l,{size:17,cls:'it'})); if (n >= END) floorText(x+37,y+CELL-12,0,'round over · back to 1',{size:10,col:RED,cls:'it'}); }
+    { const L = lines(SQ[n].words), v = j === 2 ? 30 : 38; floorText(x+12,y+CELL-v,0,String(n+1),{size:36,col:RED,cls:'it'}); const fs = labelSize(L); L.forEach((l,k) => floorText(x+37,y+CELL-v-(L.length-1-k)*fs*1.06,0,l,{size:fs,cls:'it'})); if (n >= END) floorText(x+37,y+CELL-12,0,'round over · back to 1',{size:10,col:RED,cls:'it'}); }
     SCENES[n](x,y); flush(); out.push('</g>'); });
   label(72,330,'start','you are going to change the world',[58,30,62]);
   label(1340,1150,'the end','ready to start over?',[620,620,4],'end');
